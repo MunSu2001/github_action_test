@@ -1,25 +1,30 @@
-name: Persistent Nginx Deployment
+name: Deploy Frontend and Backend via Docker Compose
 
-on: push
+on:
+  push:
+    branches:
+      - main
 
 jobs:
-  deploy-nginx:
+  deploy-services:
     runs-on: self-hosted
     steps:
-      - name: Stop and Remove Existing Container
-        run: |
-          docker stop nginx-container || true
-          docker rm nginx-container || true
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Run Nginx in Background
+      - name: Stop and Remove Existing Containers
         run: |
-          docker run -d \
-            --name nginx-container \
-            -p 8080:80 \
-            ubuntu:24.04 \
-            bash -c "apt-get update && apt-get install -y nginx && nginx -g 'daemon off;'"
+          docker compose down --remove-orphans
 
-      - name: Verify Running Container
+      - name: Deploy with Docker Compose
         run: |
-          docker ps -f name=nginx-container
+          docker compose up --build -d
+
+      - name: Clean up unused Docker images
+        run: |
+          docker image prune -f
+
+      - name: Verify Running Services
+        run: |
+          docker compose ps
 
